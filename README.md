@@ -13,26 +13,77 @@ Dockerfile driven template project for building images and manage containers for
 ## Features
 
 * One-click commands using `make`
-* Built-in nginx-proxy for multiple instances
+* Built-in HTTP ingress using nginx-proxy for multiple instances
+* Automatic renewable HTTPS using Let's Encrypt
+* One-click Chevereto updates
+* Integrated with CloudFlare API (automatic sub-domain handling)
 * Pure Docker instructions
-* Integrated with CloudFlare API
 
 ## Requirements
 
-* Chevereto V4 license key (for paid edition)
+`To follow this guide, make sure you have:
+
+* A Ubuntu server with shell access and public IP address.
+* A domain managed by CloudFlare (if using integration)
+* A Chevereto license (required for the paid edition)
   * [Purchase](https://chevereto.com/pricing) new license
-  * [Access](https://chevereto.com/panel/license) existing purchase
-* Server with
-  * Shell access
-  * `make`, `unzip`, `curl` and `git`
-  * [Docker](https://docs.docker.com/)
-  * [Compose V2](https://docs.docker.com/compose/cli-command/) `docker compose`
-* Hostname pointing to server
-* See [CLOUDFLARE](./docs/CLOUDFLARE.md) when using CloudFlare
+  * [Access](https://chevereto.com/panel/license) existing purchase`
+
+## Quick-start
+
+Run the following command to install this project and all its dependencies in your brand new **Ubuntu 22.04** server.
+
+```sh
+bash <(curl -s https://chevereto.com/sh/ubuntu/22.04/docker.sh)
+```
+
+Create configuration file at `.env` by running this command.
+
+```sh
+make env
+```
+
+Run the following command to setup the system.
+
+```sh
+make setup
+```
+
+If using Chevereto paid edition, build the Chevereto image by running this command.
+
+```sh
+make image
+```
+
+### Deploying websites
+
+To deploy a new website use the following command format.
+
+```sh
+make deploy NAMESPACE={namespace} ADMIN_EMAIL={email}
+```
+
+Replace `{namespace}` with the desired project name and `{email}` with the admin email for the website.
+
+### Destroying websites
+
+To destroy a website use the following command format.
+
+```sh
+make destroy NAMESPACE={namespace}
+```
+
+Replace `{namespace}` with the desired project name to destroy.
 
 ## Pure Docker
 
-Refer to [PURE-DOCKER](docs/PURE-DOCKER.md) for a complete pure Docker command reference.
+If you want full control of the container provisioning you can get our base image at:
+
+```sh
+ghcr.io/chevereto/chevereto:latest
+```
+
+You can get this container running with the following command:
 
 ```sh
 docker run -d \
@@ -50,7 +101,9 @@ docker run -d \
   ghcr.io/chevereto/chevereto:latest
 ```
 
-## Quick setup
+See [PURE-DOCKER](docs/PURE-DOCKER.md) for a complete pure Docker command reference.
+
+## Manual setup
 
 * Clone this repository [chevereto/docker](https://github.com/chevereto/docker) (see [SETUP](docs/SETUP.md#clone))
 
@@ -64,7 +117,13 @@ git clone https://github.com/chevereto/docker.git
 make install-docker
 ```
 
-You may also check [Docker for Desktop](https://docs.docker.com/get-docker/) and [Docker Engine](https://docs.docker.com/engine/install/) (servers) instructions
+You may also check [Docker for Desktop](https://docs.docker.com/get-docker/) and [Docker Engine](https://docs.docker.com/engine/install/) (servers) instructions.
+
+* Create `.env` configuration file
+
+```sh
+make env
+```
 
 * Create Cron (see [SETUP](docs/SETUP.md#cron))
 
@@ -80,7 +139,7 @@ make proxy EMAIL_HTTPS=mail@yourdomain.tld
 
 ## Build Chevereto image
 
-💡 Omit this step when using free edition as the image is available at [GHCR](https://github.com/chevereto/chevereto/pkgs/container/chevereto).
+Omit this step when using free edition as the image is available at [GHCR](https://github.com/chevereto/chevereto/pkgs/container/chevereto).
 
 * Create Chevereto image (see [SETUP](docs/SETUP.md#custom-application))
 
@@ -94,20 +153,6 @@ make image
 
 ```sh
 make namespace NAMESPACE=yourproject HOSTNAME=yourdomain.tld
-```
-
-## Spawn Chevereto instance
-
-* Run the Chevereto container using [spawn](docs/DOCKER-COMPOSE.md#spawn):
-
-```sh
-make spawn NAMESPACE=yourproject
-```
-
-* 💡 When using free edition pass `EDITION=free`:
-
-```sh
-make spawn NAMESPACE=yourproject EDITION=free
 ```
 
 ## Documentation

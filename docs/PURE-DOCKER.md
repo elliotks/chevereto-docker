@@ -19,7 +19,7 @@ By running the above command you will generate the following tags:
 * `chevereto:latest`
 * `chevereto:4`
 * `chevereto:4.0`
-* `chevereto:4.0.7`
+* `chevereto:4.0.9`
 
 ## Run (paid edition)
 
@@ -66,7 +66,7 @@ docker run -d \
 Create your own `docker-compose.yml` at your project folder.
 
 ```yml
-version: "3.8"
+version: "3.9"
 
 services:
   database:
@@ -76,6 +76,11 @@ services:
     volumes:
       - database:/var/lib/mysql
     restart: always
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--su-mysql", "--connect"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     environment:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: chevereto
@@ -89,6 +94,9 @@ services:
     volumes:
       - storage:/var/www/html/images/
     restart: always
+    depends_on:
+      database:
+        condition: service_healthy
     expose:
       - 80
     environment:

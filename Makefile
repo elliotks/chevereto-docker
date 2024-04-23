@@ -1,9 +1,11 @@
 #!make
 SYSTEM ?= ubuntu/22.04
 ENV_FILE = ./.env
+DOMAIN ?= localhost
 NAMESPACE ?= chevereto
 NAMESPACE_FILE = ./namespace/${NAMESPACE}
 NAMESPACE_FILE_EXISTS = false
+CHEVERETO_LICENSE_KEY ?= ""
 ifneq ("$(wildcard ${NAMESPACE_FILE})","")
 	NAMESPACE_FILE_EXISTS = true
 	include ${NAMESPACE_FILE}
@@ -17,7 +19,7 @@ SOURCE ?= ~/git/chevereto/v4
 TARGET ?= default# default|dev
 VERSION ?= 4.0
 PHP ?= 8.2
-EDITION ?= pro
+EDITION ?= $(shell [ "${CHEVERETO_LICENSE_KEY}" = "" ] && echo free || echo pro)
 DOCKER_USER ?= www-data
 HOSTNAME ?= localhost
 HOSTNAME_PATH ?= /
@@ -46,7 +48,7 @@ COMPOSE_SAMPLE = $(shell [ "${TARGET}" = "default" ] && echo default || echo dev
 COMPOSE_FILE = $(shell [ -f \${COMPOSE_TARGET} ] && echo \${COMPOSE_TARGET} || echo \${COMPOSE_SAMPLE})
 FEEDBACK = $(shell echo 👉 \${TARGET} \${CONTAINER_BASENAME} @\${NAMESPACE_FILE} V\${VERSION} \(\${DOCKER_USER}\))
 FEEDBACK_SHORT = $(shell echo 👉 \${TARGET} V\${VERSION} \(\${DOCKER_USER}\))
-LICENSE ?= $(shell stty -echo; read -p "Chevereto V4 License key (if any): 🔑" license; stty echo; echo $$license)
+CHEVERETO_LICENSE ?= $(shell stty -echo; read -p "Chevereto V4 License key (for paid edition): 🔑" license; stty echo; echo $$license)
 DOCKER_COMPOSE = $(shell echo @CONTAINER_BASENAME=\${CONTAINER_BASENAME} \
 	SOURCE=\${SOURCE} \
 	DB_PORT=\${DB_PORT} \
@@ -75,8 +77,8 @@ feedback--compose: feedback--image
 	@echo "🐋 ${COMPOSE_FILE}"
 
 feedback--url:
-	@echo "🔌 ${PORT}"
-	@echo "${URL} @URL"
+	@echo "Protocol ${PROTOCOL} (:${PORT})"
+	@echo "@URL ${URL}"
 
 feedback--image:
 	@echo "📦 ${IMAGE} (BASE ${IMAGE_NAME})"
@@ -93,7 +95,7 @@ feedback--namespace:
 # Docker
 
 image: feedback--image feedback--short
-	@LICENSE=${LICENSE} \
+	@CHEVERETO_LICENSE_KEY=${CHEVERETO_LICENSE_KEY} \
 	VERSION=${VERSION} \
 	IMAGE_NAME=${IMAGE_NAME} \
 	./scripts/system/chevereto.sh \
@@ -156,7 +158,7 @@ cloudflare:
 	@./scripts/system/cloudflare.sh
 
 cloudflare--create:
-	@./scripts/system/cloudflare--create.sh | (printf "CLOUDFLARE_IDENTIFIER=" && cat) >> ${NAMESPACE_FILE}
+	@NAMESPACE_FILE=${NAMESPACE_FILE} ./scripts/system/cloudflare--create.sh
 
 cloudflare--delete:
 	@./scripts/system/cloudflare--delete.sh
@@ -178,36 +180,53 @@ namespace:
 	ENCRYPTION_KEY=${ENCRYPTION_KEY} \
 	./scripts/system/namespace.sh
 
+.PHONY: env
+env:
+	@chmod +x ./scripts/system/env.sh
+	@ENV_FILE=${ENV_FILE} ./scripts/system/env.sh
+
+setup: cron proxy
+
 # Docker compose
 
-up: feedback feedback--compose feedback--url
+up: feedback--compose feedback--url
 	${DOCKER_COMPOSE} up
 
-up-d: feedback feedback--compose feedback--url
+up-d: feedback--compose feedback--url
 	${DOCKER_COMPOSE} up -d
 
-stop: feedback feedback--compose
+stop: feedback--compose
 	${DOCKER_COMPOSE} stop
 
-start: feedback feedback--compose
+start: feedback--compose
 	${DOCKER_COMPOSE} start
 
-restart: feedback feedback--compose
+restart: feedback--compose
 	${DOCKER_COMPOSE} restart
 
-down: feedback feedback--compose
+down: feedback--compose
 	${DOCKER_COMPOSE} down
 
-down--volumes: feedback feedback--compose
+down--volumes: feedback--compose
 	${DOCKER_COMPOSE} down --volumes
 
 # Instances
 
-spawn: feedback feedback--compose feedback--url cloudflare--create up-d
+.PHONY: deploy
+deploy:
+	@./scripts/system/deploy.sh
 
-destroy: feedback feedback--compose cloudflare--delete
+update: feedback--compose feedback--url
+	@./scripts/system/update.sh
+
+destroy: feedback--compose cloudflare--delete
 	${DOCKER_COMPOSE} down --volumes
 	@rm namespace/${NAMESPACE}
+
+install: feedback--short
+	docker exec -it --user ${DOCKER_USER} \
+		${CONTAINER_BASENAME}_${SERVICE} \
+		app/bin/legacy -C install -u "${ADMIN_USER}" -e "${ADMIN_EMAIL}" -x "${ADMIN_PASSWORD}"
 
 # nginx-proxy
 

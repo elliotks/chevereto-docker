@@ -1,8 +1,10 @@
 # Docker Compose
 
-* Requires [Compose V2](https://docs.docker.com/compose/cli-command/)
+This project includes shortcuts for running `docker compose` commands. It uses `default.yml` but it can also use your own compose file.
 
-Shortcuts for running `docker compose` commands. It uses your own `docker-compose.yml` file when present, defaults to [default.yml](../default.yml) and customizable with the `COMPOSE` option, use `COMPOSE=my-compose` to point a custom compose file at `./my-compose.yml`.
+* Requires [Compose V2](https://docs.docker.com/compose/cli-command/)
+* Place a `docker-compose.yml` file to use your own instead of [default.yml](../default.yml)
+* Pass `COMPOSE=my-compose` to use `my-compose.yml`
 
 ```sh
 make <command> <options>
@@ -34,6 +36,10 @@ Example:
 ```sh
 make up NAMESPACE=yourproject
 ```
+
+## Compose files
+
+ By default it uses `default.yml` which is intended to be used in production with nginx proxy.
 
 ### Notes on TARGET
 
@@ -90,16 +96,6 @@ make down--volumes
 ```
 
 ## Combined commands
-
-### Spawn
-
-💡 Use it right after creating the NAMESPACE.
-
-This will run [cloudflare--create](CLOUDFLARE.md#create-cname-record) and [up-d](DOCKER-COMPOSE.md#up-daemon).
-
-```sh
-make spawn NAMESPACE=yourproject
-```
 
 ### Destroy
 

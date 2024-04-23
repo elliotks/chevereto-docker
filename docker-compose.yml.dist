@@ -8,8 +8,6 @@ services:
       - chevereto
     volumes:
       - database:/var/lib/mysql
-    ports:
-      - ${DB_PORT}:3306
     restart: always
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--su-mysql", "--connect"]
@@ -29,10 +27,6 @@ services:
       - chevereto
     volumes:
       - storage:/var/www/html/images/
-      - chevereto:/var/www/html/
-      - type: bind
-        source: ${SOURCE}
-        target: /var/www/chevereto
     ports:
       - ${HTTP_PORT}:80
       - ${HTTPS_PORT}:443
@@ -41,25 +35,25 @@ services:
       database:
         condition: service_healthy
     environment:
-      CHEVERETO_ENVIRONMENT: dev
+      VIRTUAL_HOST: ${HOSTNAME}
+      LETSENCRYPT_HOST: ${HOSTNAME}
       CHEVERETO_DB_HOST: database
       CHEVERETO_DB_USER: chevereto
       CHEVERETO_DB_PASS: user_database_password
       CHEVERETO_DB_PORT: 3306
       CHEVERETO_DB_NAME: chevereto
+      CHEVERETO_HEADER_CLIENT_IP: X-Real-IP
       CHEVERETO_HOSTNAME: ${HOSTNAME}
       CHEVERETO_HOSTNAME_PATH: ${HOSTNAME_PATH}
       CHEVERETO_HTTPS: ${HTTPS}
       CHEVERETO_ASSET_STORAGE_TYPE: local
       CHEVERETO_ASSET_STORAGE_URL: ${URL}images/_assets/
       CHEVERETO_ASSET_STORAGE_BUCKET: /var/www/html/images/_assets/
-      CHEVERETO_ENCRYPTION_KEY:
+      CHEVERETO_ENCRYPTION_KEY: ${ENCRYPTION_KEY}
 
 volumes:
   database:
-  assets:
   storage:
-  chevereto:
 
 networks:
   chevereto:
